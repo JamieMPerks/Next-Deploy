@@ -1,0 +1,10 @@
+version: "3.8"
+services:
+  certbot-init:
+    image: certbot/certbot
+    depends_on:
+      - nginx
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    command: sh -c "certbot certonly --webroot --webroot-path=/var/www/certbot -d {DOMAIN} --agree-tos --email admin@{DOMAIN} --non-interactive --keep-until-expiring"

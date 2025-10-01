@@ -1,0 +1,13 @@
+{
+  "collectionName": "components_services",
+  "info": {
+    "displayName": "Services"
+  },
+  "attributes": {
+    "items": {
+      "type": "component",
+      "repeatable": true,
+      "component": "sections.service-item"
+    }
+  }
+}
