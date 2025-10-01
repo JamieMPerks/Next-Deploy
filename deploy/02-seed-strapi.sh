@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 set -e
 if [ -z "$1" ]; then
-  echo "Usage: $0 <project-dir>"
-  exit 1
+	echo "Usage: $0 <project-dir>"
+	exit 1
 fi
 PROJECT_DIR="$1"
 CMS_DIR="$PROJECT_DIR/cms"
 BOOTSTRAP_PATH="$CMS_DIR/config/functions/bootstrap.js"
+mkdir -p "$(dirname "$BOOTSTRAP_PATH")"
 
 echo "==> Writing bootstrap seeder to $BOOTSTRAP_PATH"
 
-cat > "$BOOTSTRAP_PATH" <<'JS'
+cat >"$BOOTSTRAP_PATH" <<'JS'
 'use strict';
 
 module.exports = async () => {
