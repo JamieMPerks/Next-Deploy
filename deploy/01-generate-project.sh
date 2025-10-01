@@ -124,9 +124,13 @@ cat >"$PROJECT_DIR/cms/Dockerfile" <<'EOF'
 FROM node:18-bullseye
 
 WORKDIR /srv/app
+
 COPY package.json ./
+
 RUN npm install
+
 COPY . .
+
 EXPOSE 1337
 CMD ["npm", "run", "develop"]
 EOF
@@ -137,12 +141,16 @@ cat >"$PROJECT_DIR/cms/package.json" <<'EOF'
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "develop": "strapi start",
+    "develop": "strapi develop",
     "start": "strapi start",
     "build": "strapi build"
   },
   "dependencies": {
-    "strapi": "^4.0.0"
+    "@strapi/strapi": "latest",
+    "@strapi/plugin-i18n": "latest",
+    "@strapi/plugin-users-permissions": "latest",
+    "@strapi/plugin-upload": "latest",
+    "pg": "latest"
   }
 }
 EOF
