@@ -146,11 +146,11 @@ cat >"$PROJECT_DIR/cms/package.json" <<'EOF'
     "build": "strapi build"
   },
   "dependencies": {
-    "@strapi/strapi": "latest",
-    "@strapi/plugin-i18n": "latest",
-    "@strapi/plugin-users-permissions": "latest",
-    "@strapi/plugin-upload": "latest",
-    "pg": "latest"
+    "@strapi/strapi": "^4.25.0",
+    "@strapi/plugin-i18n": "^4.25.0",
+    "@strapi/plugin-users-permissions": "^4.25.0",
+    "@strapi/plugin-upload": "^4.25.0",
+    "pg": "^8.11.0"
   }
 }
 EOF
