@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -e
 if [ -z "$1" ]; then
-  echo "Usage: $0 <domain>"
-  exit 1
+	echo "Usage: $0 <domain>"
+	exit 1
 fi
+
 DOMAIN="$1"
 PROJECT_DIR="/var/www/$DOMAIN"
 
@@ -15,8 +16,11 @@ echo "-> Creating cms, frontend, nginx, certbot folders..."
 mkdir -p "$PROJECT_DIR"/{cms,frontend,nginx,certbot}
 mkdir -p "$PROJECT_DIR"/deploy
 
-echo "-> Writing docker-compose.yml into $PROJECT_DIR"
-cat > "$PROJECT_DIR/docker-compose.yml" <<'YAML'
+##########################################
+# docker-compose.yml
+##########################################
+echo "-> Writing docker-compose.yml..."
+cat >"$PROJECT_DIR/docker-compose.yml" <<'YAML'
 version: "3.8"
 services:
   postgres:
@@ -91,8 +95,11 @@ networks:
     driver: bridge
 YAML
 
-echo "-> Writing docker-compose.override.yml (certbot init)."
-cat > "$PROJECT_DIR/docker-compose.override.yml" <<'YAML'
+##########################################
+# docker-compose.override.yml (certbot init)
+##########################################
+echo "-> Writing docker-compose.override.yml..."
+cat >"$PROJECT_DIR/docker-compose.override.yml" <<YAML
 version: "3.8"
 services:
   certbot-init:
@@ -102,11 +109,94 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    command: sh -c "certbot certonly --webroot --webroot-path=/var/www/certbot -d {DOMAIN} --agree-tos --email admin@{DOMAIN} --non-interactive --keep-until-expiring"
+    command: >
+      sh -c "certbot certonly --webroot --webroot-path=/var/www/certbot
+      -d $DOMAIN -d www.$DOMAIN
+      --agree-tos --email admin@$DOMAIN
+      --non-interactive --keep-until-expiring"
 YAML
 
-echo "-> Copying template deploy scripts..."
-cp -r "$(pwd)/deploy"/* "$PROJECT_DIR/deploy/" || true
+##########################################
+# CMS (Strapi)
+##########################################
+echo "-> Writing Strapi Dockerfile and package.json..."
+cat >"$PROJECT_DIR/cms/Dockerfile" <<'EOF'
+FROM node:18-bullseye
 
-echo "-> Done. Edit credentials and review docker-compose.yml to suit your needs."
-echo "Project scaffolded at $PROJECT_DIR"
+WORKDIR /srv/app
+COPY package.json yarn.lock ./
+RUN corepack enable && corepack prepare yarn@stable --activate
+RUN yarn install --frozen-lockfile
+
+COPY . .
+
+ENV DATABASE_CLIENT=${DATABASE_CLIENT:-postgres}
+ENV DATABASE_HOST=${DATABASE_HOST:-postgres}
+ENV DATABASE_PORT=${DATABASE_PORT:-5432}
+ENV DATABASE_NAME=${DATABASE_NAME:-app}
+ENV DATABASE_USERNAME=${DATABASE_USERNAME:-app}
+ENV DATABASE_PASSWORD=${DATABASE_PASSWORD:-changeme}
+
+EXPOSE 1337
+CMD ["yarn", "develop"]
+EOF
+
+cat >"$PROJECT_DIR/cms/package.json" <<'EOF'
+{
+  "name": "strapi-cms",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "develop": "strapi start"
+  },
+  "dependencies": {
+    "strapi": "^4.10.5"
+  }
+}
+EOF
+
+##########################################
+# Frontend (Next.js)
+##########################################
+echo "-> Writing Next.js Dockerfile and package.json..."
+cat >"$PROJECT_DIR/frontend/Dockerfile" <<'EOF'
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package.json yarn.lock* ./
+RUN yarn install
+COPY . .
+RUN yarn build
+
+FROM node:18-alpine AS runner
+WORKDIR /app
+COPY --from=builder /app ./
+EXPOSE 3000
+CMD ["yarn", "start"]
+EOF
+
+cat >"$PROJECT_DIR/frontend/package.json" <<'EOF'
+{
+  "name": "nextjs-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "13.4.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  }
+}
+EOF
+
+##########################################
+# Done
+##########################################
+echo "-> Project scaffolded at $PROJECT_DIR"
+echo "Next steps:"
+echo "1. Run: bash deploy/02-seed-strapi.sh $PROJECT_DIR"
+echo "2. Run: bash deploy/03-start-stack.sh $PROJECT_DIR"
+echo "3. Init SSL once: cd $PROJECT_DIR && docker compose up certbot-init && docker compose restart nginx"
