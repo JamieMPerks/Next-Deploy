@@ -72,6 +72,24 @@ networks:
   web:
 YAML
 
+	echo "-> Writing docker-compose.override.yml with certbot-init"
+	cat >"$PROJECT_DIR/docker-compose.override.yml" <<YAML
+version: "3.8"
+services:
+  certbot-init:
+    image: certbot/certbot
+    depends_on:
+      - nginx
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    command: >
+      sh -c "certbot certonly --webroot --webroot-path=/var/www/certbot
+      -d $DOMAIN -d www.$DOMAIN
+      --agree-tos --email admin@$DOMAIN
+      --non-interactive --keep-until-expiring"
+YAML
+
 	echo "-> Writing nginx/default.conf inside project"
 	cat >"$PROJECT_DIR/nginx/default.conf" <<EOF
 server {
@@ -129,7 +147,7 @@ networks:
 YAML
 
 	##########################################
-	# System Nginx Config for MAIN VPS
+	# System Nginx Config for Host
 	##########################################
 	NGINX_FILE="/etc/nginx/sites-available/$DOMAIN"
 	echo "-> Writing host Nginx config to $NGINX_FILE"
@@ -155,10 +173,8 @@ server {
 }
 EOF
 
-	echo "-> Symlinking into sites-enabled"
+	echo "-> Symlinking and reloading Nginx"
 	sudo ln -sf "$NGINX_FILE" "/etc/nginx/sites-enabled/$DOMAIN"
-
-	echo "-> Testing and reloading Nginx"
 	sudo nginx -t && sudo systemctl reload nginx
 fi
 
@@ -167,8 +183,9 @@ fi
 ##########################################
 echo "✅ Project scaffolded at $PROJECT_DIR"
 if [ "$MODE" == "--client" ]; then
-	echo "Run next steps: 02 -> 05 scripts. Docker Nginx will handle SSL for $DOMAIN"
+	echo "Docker stack includes Nginx + Certbot."
+	echo "Next: Run scripts 02 -> 05. After 05, use: docker compose up certbot-init"
 else
-	echo "Run next steps: 02 -> 05 scripts. System Nginx now proxies $DOMAIN to ports 3000/1337"
-	echo "Remember to run certbot on host: sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN"
+	echo "System Nginx configured for $DOMAIN -> Next.js:3000, Strapi:1337"
+	echo "Next: Run scripts 02 -> 05. Then issue SSL with: sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN"
 fi
