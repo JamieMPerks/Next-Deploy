@@ -1,20 +1,9 @@
 {
   "collectionName": "components_hero",
-  "info": {
-    "displayName": "Hero",
-    "description": ""
-  },
+  "info": { "displayName": "Hero" },
   "attributes": {
-    "heading": {
-      "type": "string"
-    },
-    "subheading": {
-      "type": "string"
-    },
-    "background_image": {
-      "type": "media",
-      "multiple": false,
-      "required": false
-    }
+    "heading": { "type": "string" },
+    "subheading": { "type": "string" },
+    "background_image": { "type": "media", "multiple": false }
   }
 }

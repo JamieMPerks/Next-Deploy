@@ -1,8 +1,6 @@
 {
   "collectionName": "components_services",
-  "info": {
-    "displayName": "Services"
-  },
+  "info": { "displayName": "Services" },
   "attributes": {
     "items": {
       "type": "component",
