@@ -125,14 +125,10 @@ FROM node:18-bullseye
 
 WORKDIR /srv/app
 COPY package.json ./
-
-RUN corepack enable && corepack prepare yarn@stable --activate
-RUN yarn install
-
+RUN npm install
 COPY . .
-
 EXPOSE 1337
-CMD ["yarn", "develop"]
+CMD ["npm", "run", "develop"]
 EOF
 
 cat >"$PROJECT_DIR/cms/package.json" <<'EOF'
@@ -141,10 +137,12 @@ cat >"$PROJECT_DIR/cms/package.json" <<'EOF'
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "develop": "strapi start"
+    "develop": "strapi start",
+    "start": "strapi start",
+    "build": "strapi build"
   },
   "dependencies": {
-    "strapi": "^4.10.5"
+    "strapi": "4.24.2"
   }
 }
 EOF
@@ -157,15 +155,15 @@ cat >"$PROJECT_DIR/frontend/Dockerfile" <<'EOF'
 FROM node:18-alpine AS builder
 WORKDIR /app
 COPY package.json ./
-RUN yarn install
+RUN npm install
 COPY . .
-RUN yarn build
+RUN npm run build
 
 FROM node:18-alpine AS runner
 WORKDIR /app
 COPY --from=builder /app ./
 EXPOSE 3000
-CMD ["yarn", "start"]
+CMD ["npm", "run", "start"]
 EOF
 
 cat >"$PROJECT_DIR/frontend/package.json" <<'EOF'
