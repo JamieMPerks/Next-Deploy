@@ -69,7 +69,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
     depends_on:
@@ -83,7 +83,7 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    entrypoint: /bin/sh -c "trap exit TERM; while :; do sleep 12h & wait $${!}; certbot renew; done"
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do sleep 12h & wait \$${!}; certbot renew; done"
     networks:
       - web
 
@@ -117,20 +117,45 @@ services:
 YAML
 
 ##########################################
+# NGINX default.conf
+##########################################
+echo "-> Writing nginx/default.conf"
+cat >"$PROJECT_DIR/nginx/default.conf" <<EOF
+server {
+    listen 80;
+    server_name $DOMAIN www.$DOMAIN;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        proxy_pass http://nextjs:3000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+
+    location /api/ {
+        proxy_pass http://strapi:1337/;
+        proxy_set_header Host \$host;
+    }
+
+    location /uploads/ {
+        proxy_pass http://strapi:1337/uploads/;
+    }
+}
+EOF
+
+##########################################
 # CMS (Strapi)
 ##########################################
 echo "-> Writing Strapi Dockerfile and package.json..."
 cat >"$PROJECT_DIR/cms/Dockerfile" <<'EOF'
 FROM node:18-bullseye
-
 WORKDIR /srv/app
-
 COPY package.json ./
-
 RUN npm install
-
 COPY . .
-
 EXPOSE 1337
 CMD ["npm", "run", "develop"]
 EOF
@@ -185,74 +210,41 @@ cat >"$PROJECT_DIR/frontend/package.json" <<'EOF'
     "start": "next start"
   },
   "dependencies": {
-    "next": "13.4.0",
-    "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "next": "^13.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }
 EOF
 
 ##########################################
-# Scaffold minimal Next.js app
+# Scaffold Next.js Boilerplate
 ##########################################
-mkdir -p "$PROJECT_DIR/frontend/pages/blog"
-mkdir -p "$PROJECT_DIR/frontend/styles"
+FRONTEND="$PROJECT_DIR/frontend"
+mkdir -p "$FRONTEND/pages/blog" "$FRONTEND/components" "$FRONTEND/styles"
 
-# Home page
-cat >"$PROJECT_DIR/frontend/pages/index.js" <<'EOF'
-export default function Home() {
-  return (
-    <main style={{ padding: "3rem", textAlign: "center" }}>
-      <h1>Next.js + Strapi Boilerplate</h1>
-      <p>Your site is up and running 🎉</p>
-    </main>
-  );
-}
-EOF
-
-# Blog index page
-cat >"$PROJECT_DIR/frontend/pages/blog/index.js" <<'EOF'
-export default function BlogIndex() {
-  return (
-    <main style={{ padding: "3rem" }}>
-      <h1>Blog</h1>
-      <p>This will list blog posts pulled from Strapi.</p>
-    </main>
-  );
-}
-EOF
-
-# Blog single page
-cat >"$PROJECT_DIR/frontend/pages/blog/[slug].js" <<'EOF'
-export default function BlogPost({ slug }) {
-  return (
-    <main style={{ padding: "3rem" }}>
-      <h1>Blog Post: {slug}</h1>
-      <p>This will display blog content from Strapi.</p>
-    </main>
-  );
-}
-EOF
-
-# _app.js (for global styles)
-cat >"$PROJECT_DIR/frontend/pages/_app.js" <<'EOF'
+# _app.js
+cat >"$FRONTEND/pages/_app.js" <<'EOF'
 import '../styles/globals.css'
+import Layout from '../components/Layout'
 
 export default function App({ Component, pageProps }) {
-  return <Component {...pageProps} />
+  return (
+    <Layout>
+      <Component {...pageProps} />
+    </Layout>
+  )
 }
 EOF
 
-# _document.js (custom HTML boilerplate)
-cat >"$PROJECT_DIR/frontend/pages/_document.js" <<'EOF'
+# _document.js
+cat >"$FRONTEND/pages/_document.js" <<'EOF'
 import { Html, Head, Main, NextScript } from 'next/document'
 
 export default function Document() {
   return (
     <Html lang="en">
-      <Head>
-        {/* Custom meta tags, fonts, etc go here */}
-      </Head>
+      <Head />
       <body>
         <Main />
         <NextScript />
@@ -262,17 +254,96 @@ export default function Document() {
 }
 EOF
 
-# globals.css (basic CSS starter, Tailwind-ready)
-cat >"$PROJECT_DIR/frontend/styles/globals.css" <<'EOF'
-/* Global styles or Tailwind imports */
+# index.js
+cat >"$FRONTEND/pages/index.js" <<'EOF'
+export default function Home() {
+  return (
+    <div style={{ padding: "3rem", textAlign: "center" }}>
+      <h1>Next.js + Strapi Boilerplate</h1>
+      <p>Your site is up and running 🎉</p>
+    </div>
+  )
+}
+EOF
+
+# Blog
+cat >"$FRONTEND/pages/blog/index.js" <<'EOF'
+import Link from 'next/link'
+export default function BlogIndex() {
+  const posts = [{ slug: 'hello-world', title: 'Hello World' }]
+  return (
+    <main style={{ padding: "2rem" }}>
+      <h1>Blog</h1>
+      <ul>
+        {posts.map(post => (
+          <li key={post.slug}><Link href={`/blog/${post.slug}`}>{post.title}</Link></li>
+        ))}
+      </ul>
+    </main>
+  )
+}
+EOF
+
+cat >"$FRONTEND/pages/blog/[slug].js" <<'EOF'
+import { useRouter } from 'next/router'
+export default function BlogPost() {
+  const { slug } = useRouter().query
+  return (
+    <main style={{ padding: "2rem" }}>
+      <h1>Blog Post: {slug}</h1>
+      <p>This will display content from Strapi.</p>
+    </main>
+  )
+}
+EOF
+
+# Components: Navbar, Footer, Layout
+cat >"$FRONTEND/components/Navbar.js" <<'EOF'
+import Link from 'next/link'
+export default function Navbar() {
+  return (
+    <nav style={{ padding: "1rem", background: "#222", color: "#fff" }}>
+      <ul style={{ display: "flex", gap: "2rem", listStyle: "none" }}>
+        <li><Link href="/">Home</Link></li>
+        <li><Link href="/blog">Blog</Link></li>
+        <li><Link href="/about">About</Link></li>
+        <li><Link href="/contact">Contact</Link></li>
+      </ul>
+    </nav>
+  )
+}
+EOF
+
+cat >"$FRONTEND/components/Footer.js" <<'EOF'
+export default function Footer() {
+  return (
+    <footer style={{ marginTop: "3rem", padding: "1rem", textAlign: "center", background: "#f2f2f2" }}>
+      <p>© {new Date().getFullYear()} MyClientSite. All rights reserved.</p>
+    </footer>
+  )
+}
+EOF
+
+cat >"$FRONTEND/components/Layout.js" <<'EOF'
+import Navbar from './Navbar'
+import Footer from './Footer'
+export default function Layout({ children }) {
+  return (
+    <>
+      <Navbar />
+      <main style={{ minHeight: "80vh" }}>{children}</main>
+      <Footer />
+    </>
+  )
+}
+EOF
+
+# globals.css
+cat >"$FRONTEND/styles/globals.css" <<'EOF'
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-}
-
-h1, h2, h3 {
-  margin-bottom: 1rem;
 }
 EOF
 
@@ -280,5 +351,4 @@ EOF
 # Done
 ##########################################
 echo "✅ Project scaffolded at $PROJECT_DIR"
-echo "Next step:"
-echo "   Run: bash deploy/02-generate-cms-schema.sh $DOMAIN"
+echo "Next step: Run: bash deploy/02-generate-cms-schema.sh $DOMAIN"
