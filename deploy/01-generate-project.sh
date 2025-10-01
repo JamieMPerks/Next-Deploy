@@ -10,7 +10,7 @@ PROJECT_DIR="/var/www/$DOMAIN"
 
 echo "==> Creating project structure at $PROJECT_DIR"
 sudo mkdir -p "$PROJECT_DIR"
-sudo chown "$(id -u):$(id -g)" "$PROJECT_DIR"
+sudo chown -R "$(id -u):$(id -g)" "$PROJECT_DIR"
 
 echo "-> Creating cms, frontend, nginx, certbot folders..."
 mkdir -p "$PROJECT_DIR"/{cms,frontend,nginx,certbot}
@@ -96,7 +96,7 @@ networks:
 YAML
 
 ##########################################
-# docker-compose.override.yml (certbot init)
+# docker-compose.override.yml
 ##########################################
 echo "-> Writing docker-compose.override.yml..."
 cat >"$PROJECT_DIR/docker-compose.override.yml" <<YAML
@@ -142,7 +142,7 @@ cat >"$PROJECT_DIR/cms/package.json" <<'EOF'
     "build": "strapi build"
   },
   "dependencies": {
-    "strapi": "4.24.2"
+    "strapi": "^4.0.0"
   }
 }
 EOF
@@ -189,6 +189,6 @@ EOF
 ##########################################
 echo "-> Project scaffolded at $PROJECT_DIR"
 echo "Next steps:"
-echo "1. Run: bash deploy/02-seed-strapi.sh $PROJECT_DIR"
-echo "2. Run: bash deploy/03-start-stack.sh $PROJECT_DIR"
+echo "1. Run: bash deploy/02-seed-strapi.sh $DOMAIN"
+echo "2. Run: bash deploy/03-start-stack.sh $DOMAIN"
 echo "3. Init SSL once: cd $PROJECT_DIR && docker compose up certbot-init && docker compose restart nginx"

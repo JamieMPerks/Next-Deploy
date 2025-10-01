@@ -8,6 +8,6 @@
     "build": "strapi build"
   },
   "dependencies": {
-    "strapi": "4.24.2"
+    "strapi": "^4.0.0"
   }
 }
