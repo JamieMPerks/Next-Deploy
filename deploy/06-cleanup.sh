@@ -32,3 +32,5 @@ if [ "$2" == "--wipe" ]; then
 fi
 
 echo "✅ Cleanup complete for $DOMAIN"
+echo "You can now regenerate infra with:"
+echo "   bash deploy/01-generate-project.sh $DOMAIN"

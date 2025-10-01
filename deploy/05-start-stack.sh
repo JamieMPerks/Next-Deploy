@@ -21,3 +21,7 @@ echo "==> Tailing logs (Ctrl+C to exit)..."
 docker compose logs -f
 
 popd
+
+echo "✅ Stack build + start complete for $DOMAIN"
+echo "Check logs above. Next step (first-time only):"
+echo "   cd /var/www/$DOMAIN && docker compose up certbot-init && docker compose restart nginx"

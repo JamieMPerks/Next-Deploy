@@ -61,4 +61,6 @@ module.exports = async ({ strapi }) => {
 };
 JS
 
-echo "==> Bootstrap written for project $PROJECT_DIR"
+echo "✅ Bootstrap.js created at $BOOTSTRAP_PATH"
+echo "Next step:"
+echo "   Run: bash deploy/04-generate-frontend-boilerplate.sh $DOMAIN"

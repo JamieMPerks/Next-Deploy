@@ -185,10 +185,92 @@ cat >"$PROJECT_DIR/frontend/package.json" <<'EOF'
 EOF
 
 ##########################################
+# Scaffold minimal Next.js app
+##########################################
+mkdir -p "$PROJECT_DIR/frontend/pages/blog"
+mkdir -p "$PROJECT_DIR/frontend/styles"
+
+# Home page
+cat >"$PROJECT_DIR/frontend/pages/index.js" <<'EOF'
+export default function Home() {
+  return (
+    <main style={{ padding: "3rem", textAlign: "center" }}>
+      <h1>Next.js + Strapi Boilerplate</h1>
+      <p>Your site is up and running 🎉</p>
+    </main>
+  );
+}
+EOF
+
+# Blog index page
+cat >"$PROJECT_DIR/frontend/pages/blog/index.js" <<'EOF'
+export default function BlogIndex() {
+  return (
+    <main style={{ padding: "3rem" }}>
+      <h1>Blog</h1>
+      <p>This will list blog posts pulled from Strapi.</p>
+    </main>
+  );
+}
+EOF
+
+# Blog single page
+cat >"$PROJECT_DIR/frontend/pages/blog/[slug].js" <<'EOF'
+export default function BlogPost({ slug }) {
+  return (
+    <main style={{ padding: "3rem" }}>
+      <h1>Blog Post: {slug}</h1>
+      <p>This will display blog content from Strapi.</p>
+    </main>
+  );
+}
+EOF
+
+# _app.js (for global styles)
+cat >"$PROJECT_DIR/frontend/pages/_app.js" <<'EOF'
+import '../styles/globals.css'
+
+export default function App({ Component, pageProps }) {
+  return <Component {...pageProps} />
+}
+EOF
+
+# _document.js (custom HTML boilerplate)
+cat >"$PROJECT_DIR/frontend/pages/_document.js" <<'EOF'
+import { Html, Head, Main, NextScript } from 'next/document'
+
+export default function Document() {
+  return (
+    <Html lang="en">
+      <Head>
+        {/* Custom meta tags, fonts, etc go here */}
+      </Head>
+      <body>
+        <Main />
+        <NextScript />
+      </body>
+    </Html>
+  )
+}
+EOF
+
+# globals.css (basic CSS starter, Tailwind-ready)
+cat >"$PROJECT_DIR/frontend/styles/globals.css" <<'EOF'
+/* Global styles or Tailwind imports */
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+h1, h2, h3 {
+  margin-bottom: 1rem;
+}
+EOF
+
+##########################################
 # Done
 ##########################################
-echo "-> Project scaffolded at $PROJECT_DIR"
-echo "Next steps:"
-echo "1. Run: bash deploy/02-seed-strapi.sh $DOMAIN"
-echo "2. Run: bash deploy/03-start-stack.sh $DOMAIN"
-echo "3. Init SSL once: cd $PROJECT_DIR && docker compose up certbot-init && docker compose restart nginx"
+echo "✅ Project scaffolded at $PROJECT_DIR"
+echo "Next step:"
+echo "   Run: bash deploy/02-generate-cms-schema.sh $DOMAIN"
