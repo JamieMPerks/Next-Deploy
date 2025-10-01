@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "develop": "strapi start"
+    "develop": "strapi start",
+    "start": "strapi start",
+    "build": "strapi build"
   },
   "dependencies": {
-    "strapi": "^4.10.5"
+    "strapi": "4.24.2"
   }
 }
