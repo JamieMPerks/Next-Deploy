@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -e
 if [ $# -lt 2 ]; then
-	echo "Usage: $0 <domain> <--client|--main> [--wipe]"
+	echo "Usage: $0 <domain> <--client|--main> [--wipe] [--certs]"
 	echo "  <domain> = your project domain (e.g. client.com)"
 	echo "  --client = project was generated in full Docker (self-contained)"
 	echo "  --main   = project was generated for main VPS (host nginx as proxy)"
-	echo "  --wipe   = optional, also deletes /var/www/<domain> project folder"
+	echo "  --wipe   = optional, deletes /var/www/<domain> project folder"
+	echo "  --certs  = optional, removes Let's Encrypt certs for that domain"
 	exit 1
 fi
 
@@ -38,9 +39,20 @@ if [ "$MODE" == "--main" ]; then
 fi
 
 # Remove project folder if wipe option passed
-if [ "$3" == "--wipe" ]; then
+if [[ "$@" == *"--wipe"* ]]; then
 	echo "⚠️  Wiping project directory $PROJECT_DIR"
 	sudo rm -rf "$PROJECT_DIR"
+fi
+
+# Remove Let's Encrypt certs if asked
+if [[ "$@" == *"--certs"* ]]; then
+	echo "⚠️  Removing Let's Encrypt certificates for $DOMAIN"
+	read -p "Are you sure? This deletes SSL certs for $DOMAIN (y/N): " CONFIRM
+	if [[ "$CONFIRM" == "y" || "$CONFIRM" == "Y" ]]; then
+		sudo certbot delete --cert-name "$DOMAIN" || true
+	else
+		echo "Skipping cert removal."
+	fi
 fi
 
 echo "✅ Cleanup complete for $DOMAIN ($MODE mode)"

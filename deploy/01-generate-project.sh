@@ -27,7 +27,6 @@ mkdir -p "$PROJECT_DIR"/{cms,frontend,nginx,certbot}
 if [ "$MODE" == "--client" ]; then
 	echo "-> Writing docker-compose.yml for CLIENT VPS (Docker Nginx binds 80/443)"
 	cat >"$PROJECT_DIR/docker-compose.yml" <<'YAML'
-version: "3.8"
 services:
   postgres:
     image: postgres:15
@@ -74,7 +73,6 @@ YAML
 
 	echo "-> Writing docker-compose.override.yml with certbot-init"
 	cat >"$PROJECT_DIR/docker-compose.override.yml" <<YAML
-version: "3.8"
 services:
   certbot-init:
     image: certbot/certbot
@@ -112,8 +110,8 @@ server {
     }
 
     location /admin/ {
-        proxy_pass http://127.0.0.1:1337/admin/;
-        proxy_set_header Host $host;
+        proxy_pass http://strapi:1337/admin/;
+        proxy_set_header Host \$host;
     }
 }
 EOF
@@ -121,7 +119,6 @@ EOF
 else
 	echo "-> Writing docker-compose.yml for MAIN VPS (expose 1337/3000, no Docker Nginx)"
 	cat >"$PROJECT_DIR/docker-compose.yml" <<'YAML'
-version: "3.8"
 services:
   postgres:
     image: postgres:15
@@ -172,20 +169,79 @@ server {
         proxy_set_header Host \$host;
     }
 
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:1337/uploads/;
+    }
+
     location /admin/ {
-        proxy_pass http://strapi:1337/admin/;
-        proxy_set_header Host $host;
+        proxy_pass http://127.0.0.1:1337/admin/;
+        proxy_set_header Host \$host;
+    }
+}
+EOF
+
+	echo "-> Symlinking and reloading Nginx (HTTP only for now)"
+	sudo ln -sf "$NGINX_FILE" "/etc/nginx/sites-enabled/$DOMAIN"
+	sudo nginx -t && sudo systemctl reload nginx
+
+	##########################################
+	# Request SSL certificate if not exists
+	##########################################
+	if [ -d "/etc/letsencrypt/live/$DOMAIN" ]; then
+		echo "-> SSL certificate already exists for $DOMAIN"
+	else
+		echo "-> Requesting Let's Encrypt cert for $DOMAIN ..."
+		sudo certbot certonly --nginx -d "$DOMAIN" -d "www.$DOMAIN" \
+			--agree-tos -m "admin@$DOMAIN" --non-interactive
+	fi
+
+	##########################################
+	# Add HTTPS block if missing
+	##########################################
+	if ! grep -q "listen 443 ssl" "$NGINX_FILE"; then
+		echo "-> Adding HTTPS block to $NGINX_FILE"
+		sudo tee -a "$NGINX_FILE" >/dev/null <<EOF
+
+server {
+    listen 443 ssl http2;
+    server_name $DOMAIN www.$DOMAIN;
+
+    ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:1337/;
+        proxy_set_header Host \$host;
     }
 
     location /uploads/ {
         proxy_pass http://127.0.0.1:1337/uploads/;
     }
+
+    location /admin/ {
+        proxy_pass http://127.0.0.1:1337/admin/;
+        proxy_set_header Host \$host;
+    }
+
+    error_page 404 /__custom_404.html;
 }
 EOF
+	fi
 
-	echo "-> Symlinking and reloading Nginx"
-	sudo ln -sf "$NGINX_FILE" "/etc/nginx/sites-enabled/$DOMAIN"
+	echo "-> Reloading Nginx with HTTPS active"
 	sudo nginx -t && sudo systemctl reload nginx
+
+	# Ensure no leftover override file from client mode
+	if [ -f "$PROJECT_DIR/docker-compose.override.yml" ]; then
+		echo "⚠️  Removing docker-compose.override.yml (not needed in --main mode)"
+		rm -f "$PROJECT_DIR/docker-compose.override.yml"
+	fi
 fi
 
 ##########################################
@@ -196,6 +252,6 @@ if [ "$MODE" == "--client" ]; then
 	echo "Docker stack includes Nginx + Certbot."
 	echo "Next: Run scripts 02 -> 05. After 05, use: docker compose up certbot-init"
 else
-	echo "System Nginx configured for $DOMAIN -> Next.js:3000, Strapi:1337"
-	echo "Next: Run scripts 02 -> 05. Then issue SSL with: sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN"
+	echo "System Nginx configured for $DOMAIN with HTTP+HTTPS"
+	echo "Next: Run scripts 02 -> 05."
 fi
