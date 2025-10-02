@@ -167,8 +167,6 @@ services:
       DATABASE_USERNAME: app
       DATABASE_PASSWORD: changeme
     networks: [web]
-    ports:
-    - "1337:1337"
 
   nextjs:
     build: ./frontend
