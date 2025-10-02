@@ -83,7 +83,7 @@ services:
       - ./certbot/www:/var/www/certbot
     command: >
       sh -c "certbot certonly --webroot --webroot-path=/var/www/certbot
-      -d $DOMAIN -d www.$DOMAIN
+      -d $DOMAIN 
       --agree-tos --email admin@$DOMAIN
       --non-interactive --keep-until-expiring"
 YAML
@@ -92,7 +92,7 @@ YAML
 	cat >"$PROJECT_DIR/nginx/default.conf" <<EOF
 server {
     listen 80;
-    server_name $DOMAIN www.$DOMAIN;
+    server_name $DOMAIN;
 
     location / {
         proxy_pass http://nextjs:3000;
@@ -156,7 +156,7 @@ YAML
 	sudo tee "$NGINX_FILE" >/dev/null <<EOF
 server {
     listen 80;
-    server_name $DOMAIN www.$DOMAIN;
+    server_name $DOMAIN;
 
     location / {
         proxy_pass http://127.0.0.1:3000;
@@ -191,7 +191,7 @@ EOF
 		echo "-> SSL certificate already exists for $DOMAIN"
 	else
 		echo "-> Requesting Let's Encrypt cert for $DOMAIN ..."
-		sudo certbot certonly --nginx -d "$DOMAIN" -d "www.$DOMAIN" \
+		sudo certbot certonly --nginx -d "$DOMAIN" \
 			--agree-tos -m "admin@$DOMAIN" --non-interactive
 	fi
 
@@ -204,7 +204,7 @@ EOF
 
 server {
     listen 443 ssl http2;
-    server_name $DOMAIN www.$DOMAIN;
+    server_name $DOMAIN;
 
     ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
