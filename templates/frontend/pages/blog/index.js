@@ -6,18 +6,11 @@ export default function BlogIndex({ posts, navLinks }) {
   return (
     <Layout navLinks={navLinks}>
       <h1>Blog</h1>
+      {posts.length === 0 && <p>No posts yet.</p>}
       <ul>
-        {posts.length === 0 && <li>No blog posts found.</li>}
         {posts.map((post) => (
-          <li key={post.slug} style={{ marginBottom: "1rem" }}>
-            <Link href={`/blog/${post.slug}`}>
-              <strong>{post.title}</strong>
-            </Link>
-            {post.publishedAt && (
-              <small style={{ marginLeft: "0.5rem", color: "#555" }}>
-                {new Date(post.publishedAt).toLocaleDateString()}
-              </small>
-            )}
+          <li key={post.slug}>
+            <Link href={`/blog/${post.slug}`}>{post.title}</Link>
           </li>
         ))}
       </ul>
@@ -27,17 +20,22 @@ export default function BlogIndex({ posts, navLinks }) {
 
 export async function getStaticProps() {
   const base = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
+  let posts = [];
 
-  const res = await fetch(`${base}/api/posts?sort=publishedAt:desc`);
-  const { data } = await res.json();
+  try {
+    const res = await fetch(`${base}/api/posts`);
+    if (res.ok) {
+      const { data } = await res.json();
+      posts = data.map((p) => ({
+        title: p.attributes.title,
+        slug: p.attributes.slug,
+      }));
+    }
+  } catch (err) {
+    console.warn("⚠️ Strapi not available at build time, skipping blog fetch");
+  }
 
-  const posts = data.map((post) => ({
-    title: post.attributes.title,
-    slug: post.attributes.slug,
-    publishedAt: post.attributes.publishedAt,
-  }));
-
-  const navLinks = await getNavLinks();
+  const navLinks = await getNavLinks().catch(() => []);
 
   return { props: { posts, navLinks } };
 }
