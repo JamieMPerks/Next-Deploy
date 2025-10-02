@@ -1,0 +1,42 @@
+/* General Layout */
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  background: #f9fafb;
+  color: #111;
+  line-height: 1.6;
+}
+
+/* Navbar */
+.navbar {
+  background: #111827;
+  color: #fff;
+  padding: 1rem 2rem;
+}
+
+.navbar ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  gap: 2rem;
+}
+
+.navbar a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.navbar a:hover {
+  text-decoration: underline;
+}
+
+/* Footer */
+.footer {
+  background: #f3f4f6;
+  text-align: center;
+  padding: 1rem;
+  margin-top: 3rem;
+  border-top: 1px solid #ddd;
+}
+
