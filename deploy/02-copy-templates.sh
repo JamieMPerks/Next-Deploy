@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -e
+
 if [ -z "$1" ]; then
-  echo "Usage: $0 <domain>"
-  exit 1
+	echo "Usage: $0 <domain>"
+	exit 1
 fi
 
 DOMAIN="$1"
@@ -11,10 +12,16 @@ TEMPLATE_DIR="$(dirname "$0")/../templates"
 
 echo "==> Copying CMS + Frontend templates into $PROJECT_DIR"
 
+# Ensure base dirs exist
 mkdir -p "$PROJECT_DIR/cms"
 mkdir -p "$PROJECT_DIR/frontend"
 
-cp -r "$TEMPLATE_DIR/cms/"* "$PROJECT_DIR/cms/" || true
-cp -r "$TEMPLATE_DIR/frontend/"* "$PROJECT_DIR/frontend/" || true
+# Copy contents (preserve dirs, allow empty ones too)
+rsync -av "$TEMPLATE_DIR/cms/" "$PROJECT_DIR/cms/" --exclude .gitkeep
+rsync -av "$TEMPLATE_DIR/frontend/" "$PROJECT_DIR/frontend/" --exclude .gitkeep
 
-echo "✅ Templates copied into $PROJECT_DIR"
+# Ensure 'public' dirs always exist (Strapi + Next.js need them even if empty)
+mkdir -p "$PROJECT_DIR/cms/public"
+mkdir -p "$PROJECT_DIR/frontend/public"
+
+echo "✅ Templates copied into $PROJECT_DIR (including cms/public and frontend/public)"
