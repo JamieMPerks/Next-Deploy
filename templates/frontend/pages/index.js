@@ -1,17 +1,35 @@
-export default function Home() {
+import Layout from "../components/Layout";
+import { fetchHome, getNavLinks } from "../lib/api";
+
+export default function Home({ home, navLinks }) {
   return (
-    <main style={{ textAlign: "center", padding: "3rem" }}>
-      <h1>🚀 Welcome to My Next.js + Strapi Site</h1>
-      <p>This is your boilerplate homepage.</p>
-      <section style={{ marginTop: "2rem" }}>
-        <h2>Features:</h2>
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          <li>✅ Strapi CMS backend</li>
-          <li>✅ Next.js frontend</li>
-          <li>✅ Dockerized deployment</li>
-          <li>✅ SSL-ready with Nginx + Certbot</li>
-        </ul>
-      </section>
-    </main>
+    <Layout navLinks={navLinks}>
+      <div className="home">
+        <h1>🚀 {home?.sections?.[0]?.heading || "Welcome"}</h1>
+        <p>
+          {home?.sections?.[0]?.subheading || "To our Next.js + Strapi site"}
+        </p>
+
+        <section>
+          <h2>Features:</h2>
+          <ul>
+            <li>✅ Strapi CMS backend</li>
+            <li>✅ Next.js frontend</li>
+            <li>✅ Dockerized deployment</li>
+            <li>✅ SSL-ready with Nginx + Certbot</li>
+          </ul>
+        </section>
+      </div>
+    </Layout>
   );
+}
+
+// Fetch Homepage + Nav Links from Strapi
+export async function getStaticProps() {
+  const home = await fetchHome();
+  const navLinks = await getNavLinks();
+
+  return {
+    props: { home, navLinks },
+  };
 }

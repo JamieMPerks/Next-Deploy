@@ -35,6 +35,7 @@ services:
     build: ./frontend
     environment:
       NEXT_PUBLIC_STRAPI_URL: http://strapi:1337
+      REVALIDATE_SECRET: your-secret-token
     volumes:
       - ./frontend:/usr/src/app
     networks:

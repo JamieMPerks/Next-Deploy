@@ -5,6 +5,7 @@ module.exports = async ({ strapi }) => {
     {
       title: "Home",
       slug: "home",
+      showInNav: true,
       sections: [
         {
           __component: "sections.hero",
@@ -20,6 +21,7 @@ module.exports = async ({ strapi }) => {
     {
       title: "About",
       slug: "about",
+      showInNav: true,
       sections: [
         { __component: "sections.text-block", content: "About us info..." },
       ],
@@ -27,6 +29,7 @@ module.exports = async ({ strapi }) => {
     {
       title: "Services",
       slug: "services",
+      showInNav: true,
       sections: [
         {
           __component: "sections.services",
@@ -40,6 +43,7 @@ module.exports = async ({ strapi }) => {
     {
       title: "Contact",
       slug: "contact",
+      showInNav: false, // not visible in nav by default
       sections: [
         {
           __component: "sections.text-block",
@@ -47,7 +51,7 @@ module.exports = async ({ strapi }) => {
         },
       ],
     },
-    { title: "Blog", slug: "blog", sections: [] },
+    { title: "Blog", slug: "blog", showInNav: true, sections: [] },
   ];
 
   for (const p of pages) {
