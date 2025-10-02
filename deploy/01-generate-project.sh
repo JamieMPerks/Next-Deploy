@@ -53,6 +53,7 @@ services:
       DATABASE_USERNAME: app
       DATABASE_PASSWORD: changeme
       APP_KEYS: "supersecretkey1,supersecretkey2,supersecretkey3"
+      JWT_SECRET: "supersecret-user-token"
       HOST: 0.0.0.0
       PORT: 1337
     networks: [web]
@@ -171,6 +172,7 @@ services:
       DATABASE_USERNAME: app
       DATABASE_PASSWORD: changeme
       APP_KEYS: "supersecretkey1,supersecretkey2,supersecretkey3"
+      JWT_SECRET: "supersecret-user-token"
       HOST: 0.0.0.0
       PORT: 1337
     networks: [web]
