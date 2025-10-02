@@ -110,6 +110,11 @@ server {
     location /uploads/ {
         proxy_pass http://strapi:1337/uploads/;
     }
+
+    location /admin/ {
+        proxy_pass http://127.0.0.1:1337/admin/;
+        proxy_set_header Host $host;
+    }
 }
 EOF
 
@@ -165,6 +170,11 @@ server {
     location /api/ {
         proxy_pass http://127.0.0.1:1337/;
         proxy_set_header Host \$host;
+    }
+
+    location /admin/ {
+        proxy_pass http://strapi:1337/admin/;
+        proxy_set_header Host $host;
     }
 
     location /uploads/ {
