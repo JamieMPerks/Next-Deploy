@@ -42,7 +42,9 @@ services:
   strapi:
     build: ./cms
     depends_on:
-      - postgres
+    - postgres
+    ports:
+    - "1337:1337"
     environment:
       DATABASE_CLIENT: postgres
       DATABASE_HOST: postgres
@@ -50,9 +52,11 @@ services:
       DATABASE_NAME: app
       DATABASE_USERNAME: app
       DATABASE_PASSWORD: changeme
+      APP_KEYS: "supersecretkey1,supersecretkey2,supersecretkey3"
+      HOST: 0.0.0.0
+      PORT: 1337
     networks: [web]
-    ports:
-    - "1337:1337"
+
 
   nextjs:
     build: ./frontend
@@ -156,9 +160,9 @@ services:
   strapi:
     build: ./cms
     depends_on:
-      - postgres
+    - postgres
     ports:
-      - "1337:1337"
+    - "1337:1337"
     environment:
       DATABASE_CLIENT: postgres
       DATABASE_HOST: postgres
@@ -166,6 +170,9 @@ services:
       DATABASE_NAME: app
       DATABASE_USERNAME: app
       DATABASE_PASSWORD: changeme
+      APP_KEYS: "supersecretkey1,supersecretkey2,supersecretkey3"
+      HOST: 0.0.0.0
+      PORT: 1337
     networks: [web]
 
   nextjs:
