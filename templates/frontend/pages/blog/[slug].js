@@ -1,5 +1,5 @@
 import Layout from "../../components/Layout";
-import { getNavLinks } from "../../lib/api";
+import { getNavLinks, fetchPosts, fetchPost } from "../../lib/api";
 
 export default function BlogPost({ post, navLinks }) {
   if (!post) {
@@ -18,47 +18,15 @@ export default function BlogPost({ post, navLinks }) {
 }
 
 export async function getStaticPaths() {
-  const base = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
-  let paths = [];
-
-  try {
-    const res = await fetch(`${base}/api/posts`);
-    if (res.ok) {
-      const { data } = await res.json();
-      paths = data.map((p) => ({ params: { slug: p.attributes.slug } }));
-    }
-  } catch (err) {
-    console.warn(
-      "⚠️ Strapi not available at build time, no blog paths generated",
-    );
-  }
-
+  const posts = await fetchPosts();
+  const paths = posts.map((p) => ({
+    params: { slug: p.slug },
+  }));
   return { paths, fallback: "blocking" };
 }
 
 export async function getStaticProps({ params }) {
-  const base = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
-  let post = null;
-
-  try {
-    const res = await fetch(
-      `${base}/api/posts?filters[slug][$eq]=${params.slug}&populate=deep`,
-    );
-    if (res.ok) {
-      const { data } = await res.json();
-      if (data[0]) {
-        post = {
-          title: data[0].attributes.title,
-          slug: data[0].attributes.slug,
-          content: data[0].attributes.content,
-        };
-      }
-    }
-  } catch (err) {
-    console.warn(`⚠️ Could not fetch post ${params.slug} at build time`);
-  }
-
-  const navLinks = await getNavLinks().catch(() => []);
-
+  const post = await fetchPost(params.slug);
+  const navLinks = await getNavLinks();
   return { props: { post, navLinks } };
 }
